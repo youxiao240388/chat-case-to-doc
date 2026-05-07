@@ -13,38 +13,55 @@
 - **双格式导出**：一键下载 Word (.docx) 和 PDF 文档
 - **Web 配置**：模型配置在 Web 界面完成，无需修改配置文件
 - **深色主题 UI**：拖拽上传，实时预览，一键下载
-- **Docker 一键部署**：`docker compose up -d` 即可运行
+- **一键部署**：复制 YAML 即可运行，无需手动操作
 
-## 🚀 快速开始
+## 🚀 一键部署
 
-### 1. 克隆项目
+### 群晖 NAS / Docker
 
-```bash
-git clone https://github.com/youxiao240388/chat-case-to-doc.git
-cd chat-case-to-doc
+直接复制下面的 YAML 到 Container Manager：
+
+```yaml
+services:
+  chat-case-to-doc:
+    image: python:3.11-slim
+    container_name: chat-case-to-doc
+    ports:
+      - "2657:5000"
+    volumes:
+      - chat-case-data:/app/output
+    environment:
+      - TZ=Asia/Shanghai
+    command: >
+      bash -c "
+      echo '=== 安装系统依赖 ===' &&
+      apt-get update -qq &&
+      apt-get install -y -qq --no-install-recommends 
+        libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 
+        libffi-dev libcairo2 fonts-noto-cjk curl git > /dev/null &&
+      echo '=== 下载项目代码 ===' &&
+      cd /app &&
+      git clone --depth 1 https://github.com/youxiao240388/chat-case-to-doc.git /tmp/chat-case-to-doc &&
+      cp -r /tmp/chat-case-to-doc/app/* ./app/ &&
+      rm -rf /tmp/chat-case-to-doc &&
+      echo '=== 安装 Python 依赖 ===' &&
+      pip install -q flask gunicorn rapidocr-onnxruntime pymupdf python-docx weasyprint openai python-dotenv werkzeug &&
+      echo '=== 创建目录 ===' &&
+      mkdir -p /app/output/uploads /app/output/results &&
+      echo '=== 启动服务 ===' &&
+      exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 300 app.main:app
+      "
+    restart: unless-stopped
+
+volumes:
+  chat-case-data:
 ```
 
-### 2. Docker 部署
+**首次启动**：约 3-5 分钟（下载依赖），后续秒启动。
 
-```bash
-docker compose up -d
-```
+### 访问
 
-### 3. 配置模型
-
-首次访问 `http://localhost:2657` 会自动跳转到设置页面。
-
-填入你的 API 配置（支持 DeepSeek / OpenAI / 通义千问等兼容 OpenAI 格式的 API）：
-
-- **API 密钥**：你的 API Key
-- **API 地址**：如 `https://api.deepseek.com`
-- **模型名称**：如 `deepseek-chat`
-
-视觉模型配置可选，留空则复用主模型配置。
-
-### 4. 开始使用
-
-配置完成后，回到首页即可上传文件生成案例文档。
+启动后访问 `http://你的IP:2657`，首次会自动跳转到设置页面配置 LLM API。
 
 ## 📖 使用方法
 
@@ -54,11 +71,19 @@ docker compose up -d
    - **截图**：群聊排障对话截图，按发送顺序排列
    - **PDF**：已有的排障文档或聊天记录导出
    - **文本**：复制粘贴的聊天记录
-4. 选择 OCR 模式（仅截图时显示）：
-   - **离线模式**：RapidOCR 本地识别
-   - **视觉模型**：AI 模型识别
+4. 选择 OCR 模式（仅截图时显示）
 5. 点击「开始识别」
 6. 预览结果，下载 Word 或 PDF
+
+## ⚙️ 配置说明
+
+所有模型配置通过 Web 界面管理（右上角 ⚙️），持久化存储在 Docker Volume 中。
+
+支持的 API：
+- DeepSeek：`https://api.deepseek.com`
+- OpenAI：`https://api.openai.com`
+- 通义千问：`https://dashscope.aliyuncs.com/compatible-mode/v1`
+- 其他兼容 OpenAI 格式的 API
 
 ## 🏗️ 技术架构
 
@@ -74,17 +99,6 @@ docker compose up -d
                                          └─────────────┘
 ```
 
-### 核心组件
-
-| 组件 | 技术 | 说明 |
-|------|------|------|
-| Web 框架 | Flask | 轻量、易部署 |
-| OCR | rapidocr-onnxruntime | 离线中文 OCR，无需 tesseract |
-| PDF 解析 | pymupdf | 文本型 PDF 直接提取 |
-| AI 提取 | OpenAI-compatible API | 兼容 DeepSeek/OpenAI/通义等 |
-| Word 导出 | python-docx | 结构化 Word 文档 |
-| PDF 导出 | weasyprint | HTML → PDF，支持中文 |
-
 ## 📁 项目结构
 
 ```
@@ -92,7 +106,7 @@ chat-case-to-doc/
 ├── app/
 │   ├── main.py          # Flask 主应用
 │   ├── settings.py      # 配置管理
-│   ├── ocr.py           # OCR 处理（截图/扫描PDF）
+│   ├── ocr.py           # OCR 处理
 │   ├── pdf_parser.py    # PDF 文本提取
 │   ├── llm.py           # LLM 案例提取
 │   ├── docx_export.py   # Word 文档生成
@@ -100,47 +114,28 @@ chat-case-to-doc/
 │   └── templates/
 │       ├── index.html   # 主界面
 │       └── settings.html # 设置界面
-├── Dockerfile
-├── docker-compose.yml
+├── Dockerfile           # 本地构建用
+├── docker-compose.yml   # 一键部署
 └── README.md
 ```
 
-## ⚙️ 配置说明
-
-### 端口
-
-默认 `2657`，可在 `docker-compose.yml` 中修改：
-
-```yaml
-ports:
-  - "8080:5000"  # 改为 8080
-```
-
-### 模型配置
-
-所有模型配置通过 Web 界面管理，持久化存储在 `output/settings.json`。
-
-支持的 API：
-- DeepSeek：`https://api.deepseek.com`
-- OpenAI：`https://api.openai.com`
-- 通义千问：`https://dashscope.aliyuncs.com/compatible-mode/v1`
-- 其他兼容 OpenAI 格式的 API
-
 ## 🔧 常见问题
 
-### PDF 中文显示方块
+### 首次启动慢
 
-Docker 镜像已内置 `fonts-noto-cjk` 字体，一般不会出现此问题。
+首次需要下载 Python 依赖，约 3-5 分钟。后续重启秒启动。
 
-### OCR 识别不准
+### 端口冲突
 
-- 确保截图清晰，分辨率不低于 720p
-- 聊天截图建议包含完整对话，不要截断
-- 图片按发送顺序排列（系统按文件修改时间排序）
+如果 2657 端口被占用，修改 YAML 中的端口映射：
+```yaml
+ports:
+  - "8080:5000"  # 改为你想要的端口
+```
 
-### LLM 返回格式异常
+### 数据持久化
 
-系统已内置降级处理，会将原始文本作为描述输出。
+配置和生成的文档都存储在 Docker Volume `chat-case-data` 中，容器重建不会丢失。
 
 ## 📄 License
 
