@@ -1,8 +1,9 @@
 """LLM-powered case extraction from raw chat/document text."""
-import os
 import json
 import logging
 from openai import OpenAI
+
+from .settings import get_llm_config
 
 logger = logging.getLogger(__name__)
 
@@ -42,16 +43,18 @@ SYSTEM_PROMPT = """你是一个专业的技术案例文档整理专家。你的�
 
 def get_client() -> OpenAI:
     """Get OpenAI-compatible client."""
+    config = get_llm_config()
     return OpenAI(
-        api_key=os.environ.get("LLM_API_KEY", ""),
-        base_url=os.environ.get("LLM_API_BASE", "https://api.deepseek.com"),
+        api_key=config["api_key"],
+        base_url=config["api_base"],
     )
 
 
 def extract_case(raw_text: str) -> dict:
     """Use LLM to extract structured case info from raw text."""
+    config = get_llm_config()
     client = get_client()
-    model = os.environ.get("LLM_MODEL", "deepseek-chat")
+    model = config["model"]
     
     logger.info(f"Calling LLM ({model}) to extract case...")
     
