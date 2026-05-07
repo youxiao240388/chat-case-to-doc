@@ -5,7 +5,9 @@
 ## ✨ 功能特性
 
 - **多格式输入**：聊天截图（JPG/PNG）、PDF 文档、纯文本（TXT/MD/LOG）
-- **智能 OCR**：使用 RapidOCR 识别中文聊天截图，准确率高
+- **双模式 OCR**：
+  - 📴 **离线模式**：RapidOCR 本地识别，无需网络，速度快
+  - 🤖 **视觉模型**：AI 模型识别，准确率更高，支持复杂排版
 - **PDF 自动判断**：文本型 PDF 直接提取，扫描型 PDF 自动切换 OCR
 - **AI 框例提取**：接入 DeepSeek 等 LLM，自动提取故障描述、排查步骤、根因、方案
 - **双格式导出**：一键下载 Word (.docx) 和 PDF 文档
@@ -34,6 +36,12 @@ cp .env.example .env
 LLM_API_KEY=sk-your-api-key
 LLM_API_BASE=https://api.deepseek.com
 LLM_MODEL=deepseek-chat
+
+# 可选：视觉模型（用于在线OCR模式）
+# 如果不配置，将复用 LLM 配置
+VISION_API_KEY=sk-your-vision-api-key
+VISION_API_BASE=https://api.deepseek.com
+VISION_MODEL=deepseek-chat
 ```
 
 ### 3. Docker 部署
@@ -118,6 +126,9 @@ chat-case-to-doc/
 | `LLM_API_KEY` | - | LLM API 密钥（必填） |
 | `LLM_API_BASE` | `https://api.deepseek.com` | API 地址 |
 | `LLM_MODEL` | `deepseek-chat` | 模型名称 |
+| `VISION_API_KEY` | 复用 LLM 配置 | 视觉模型 API 密钥（可选） |
+| `VISION_API_BASE` | 复用 LLM 配置 | 视觉模型 API 地址（可选） |
+| `VISION_MODEL` | 复用 LLM 配置 | 视觉模型名称（可选） |
 
 ### 端口
 
