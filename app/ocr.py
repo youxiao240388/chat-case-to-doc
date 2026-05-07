@@ -4,6 +4,8 @@ import base64
 import logging
 from pathlib import Path
 
+from .settings import get_llm_config
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,11 +23,12 @@ def ocr_image_online(image_path: str) -> str:
     """OCR a single image using Vision LLM (online). Returns extracted text."""
     from openai import OpenAI
     
+    config = get_llm_config()
     client = OpenAI(
-        api_key=os.environ.get("VISION_API_KEY", os.environ.get("LLM_API_KEY", "")),
-        base_url=os.environ.get("VISION_API_BASE", os.environ.get("LLM_API_BASE", "https://api.deepseek.com")),
+        api_key=config["vision_api_key"],
+        base_url=config["vision_api_base"],
     )
-    model = os.environ.get("VISION_MODEL", "deepseek-chat")
+    model = config["vision_model"]
     
     # Read and encode image
     with open(image_path, "rb") as f:
