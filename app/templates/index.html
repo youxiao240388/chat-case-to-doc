@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>聊天案例 → 文档生成器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .container { max-width: 960px; margin: 0 auto; padding: 30px 20px; }
+        
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 0.95em;
+            margin-bottom: 30px;
+        }
+        
+        /* Upload Area */
+        .upload-section {
+            background: #1a1a2e;
+            border: 2px dashed #333;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+        .upload-section:hover, .upload-section.dragover {
+            border-color: #667eea;
+            background: #1a1a3e;
+        }
+        .upload-section input[type="file"] {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-icon { font-size: 3em; margin-bottom: 10px; }
+        .upload-text { color: #aaa; font-size: 1.1em; }
+        .upload-hint { color: #666; font-size: 0.85em; margin-top: 8px; }
+        
+        /* File List */
+        .file-list {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+        .file-tag {
+            background: #2a2a4a;
+            color: #aaa;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        /* Submit Button */
+        .submit-btn {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 25px auto 0;
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Loading */
+        .loading { display: none; text-align: center; padding: 30px; }
+        .loading.active { display: block; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #333;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Error */
+        .error-box {
+            background: #2a1a1a;
+            border: 1px solid #ff4444;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-top: 20px;
+            color: #ff6666;
+        }
+        
+        /* Results */
+        .result-section {
+            display: none;
+            margin-top: 30px;
+        }
+        .result-section.active { display: block; }
+        
+        .case-card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .case-card h2 {
+            color: #667eea;
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        .case-card h3 {
+            color: #8888cc;
+            font-size: 1.1em;
+            margin: 18px 0 10px;
+        }
+        .info-row {
+            display: flex;
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .info-label {
+            color: #8888cc;
+            min-width: 120px;
+            font-weight: 600;
+        }
+        .info-value { color: #ddd; flex: 1; }
+        
+        .step-box {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .step-title {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .step-detail { margin: 4px 0; font-size: 0.95em; }
+        .step-label { color: #888; }
+        
+        .lesson-list { padding-left: 20px; }
+        .lesson-list li { margin: 6px 0; color: #ccc; }
+        
+        /* Download Buttons */
+        .download-section {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        .dl-btn {
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dl-btn:hover { transform: translateY(-2px); }
+        .dl-btn.word {
+            background: #2b579a;
+            color: white;
+            border: none;
+        }
+        .dl-btn.pdf {
+            background: #d32f2f;
+            color: white;
+            border: none;
+        }
+        
+        /* Raw Text Preview */
+        .raw-preview {
+            margin-top: 20px;
+        }
+        .raw-preview summary {
+            cursor: pointer;
+            color: #888;
+            font-size: 0.9em;
+        }
+        .raw-preview pre {
+            background: #111;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            color: #aaa;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        /* Feature Icons */
+        .features {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .feature-tag {
+            background: #1a1a2e;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📋 聊天案例 → 文档生成器</h1>
+    <p class="subtitle">上传聊天截图 / PDF / 文本，自动识别排障案例并生成 Word + PDF 文档</p>
+    
+    <div class="features">
+        <span class="feature-tag">🖼️ 聊天截图 OCR</span>
+        <span class="feature-tag">📄 PDF 文档解析</span>
+        <span class="feature-tag">📝 纯文本识别</span>
+        <span class="feature-tag">🤖 AI 智能提取</span>
+        <span class="feature-tag">📑 Word + PDF 导出</span>
+    </div>
+    
+    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+        <div class="upload-section" id="dropZone">
+            <input type="file" name="files" id="fileInput" multiple accept=".jpg,.jpeg,.png,.webp,.bmp,.gif,.pdf,.txt,.md,.log">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">点击或拖拽文件到此处</div>
+            <div class="upload-hint">支持格式：JPG/PNG/WebP（截图）、PDF、TXT/MD/LOG（文本）<br>可多选，图片自动按接收顺序排列</div>
+            <div class="file-list" id="fileList"></div>
+        </div>
+        
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>
+            🚀 开始识别
+        </button>
+    </form>
+    
+    {% if error %}
+    <div class="error-box">❌ {{ error }}</div>
+    {% endif %}
+    
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div>正在处理中，请稍候...</div>
+        <div style="color: #666; font-size: 0.85em; margin-top: 8px;">OCR识别 → AI分析 → 文档生成</div>
+    </div>
+    
+    {% if success %}
+    <div class="result-section active">
+        <div class="case-card">
+            <h2>📋 {{ case_data.title }}</h2>
+            
+            <h3>基本信息</h3>
+            <div class="info-row"><span class="info-label">故障现象</span><span class="info-value">{{ case_data.fault_phenomenon }}</span></div>
+            <div class="info-row"><span class="info-label">涉及设备/软件</span><span class="info-value">{{ case_data.equipment }}</span></div>
+            <div class="info-row"><span class="info-label">故障时间</span><span class="info-value">{{ case_data.fault_time }}</span></div>
+            <div class="info-row"><span class="info-label">处理人员</span><span class="info-value">{{ case_data.personnel }}</span></div>
+            
+            <h3>故障描述</h3>
+            <p>{{ case_data.fault_description }}</p>
+            
+            <h3>排障过程</h3>
+            {% for step in case_data.troubleshooting_steps %}
+            <div class="step-box">
+                <div class="step-title">步骤 {{ step.step }}</div>
+                <div class="step-detail"><span class="step-label">操作：</span>{{ step.action }}</div>
+                <div class="step-detail"><span class="step-label">观察结果：</span>{{ step.observation }}</div>
+                <div class="step-detail"><span class="step-label">分析判断：</span>{{ step.analysis }}</div>
+            </div>
+            {% endfor %}
+            
+            <h3>根因分析</h3>
+            <p>{{ case_data.root_cause }}</p>
+            
+            <h3>解决方案</h3>
+            <p>{{ case_data.solution }}</p>
+            
+            <h3>经验总结</h3>
+            <ul class="lesson-list">
+                {% for lesson in case_data.lessons_learned %}
+                <li>{{ lesson }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="download-section">
+            <a href="/download/{{ job_id }}/docx" class="dl-btn word">📥 下载 Word</a>
+            <a href="/download/{{ job_id }}/pdf" class="dl-btn pdf">📥 下载 PDF</a>
+        </div>
+        
+        {% if raw_text_preview %}
+        <details class="raw-preview">
+            <summary>查看原始识别文本（前2000字）</summary>
+            <pre>{{ raw_text_preview }}</pre>
+        </details>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const submitBtn = document.getElementById('submitBtn');
+const dropZone = document.getElementById('dropZone');
+const uploadForm = document.getElementById('uploadForm');
+const loading = document.getElementById('loading');
+
+fileInput.addEventListener('change', () => {
+    fileList.innerHTML = '';
+    const files = fileInput.files;
+    if (files.length > 0) {
+        submitBtn.disabled = false;
+        for (const f of files) {
+            const tag = document.createElement('span');
+            tag.className = 'file-tag';
+            tag.textContent = f.name;
+            fileList.appendChild(tag);
+        }
+    } else {
+        submitBtn.disabled = true;
+    }
+});
+
+// Drag and drop
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
+});
+
+// Loading state
+uploadForm.addEventListener('submit', () => {
+    loading.classList.add('active');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '处理中...';
+});
+</script>
+</body>
+</html>
