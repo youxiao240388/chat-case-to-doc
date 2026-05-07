@@ -3,15 +3,7 @@ services:
     build: .
     container_name: chat-case-to-doc
     ports:
-      - "5000:5000"
-    environment:
-      - LLM_API_KEY=${LLM_API_KEY:-sk-your-api-key}
-      - LLM_API_BASE=${LLM_API_BASE:-https://api.deepseek.com}
-      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
-      # 视觉模型配置（可选，用于在线OCR模式）
-      - VISION_API_KEY=${VISION_API_KEY:-}
-      - VISION_API_BASE=${VISION_API_BASE:-}
-      - VISION_MODEL=${VISION_MODEL:-}
+      - "2657:5000"
     volumes:
       - ./output:/app/output
     restart: unless-stopped
