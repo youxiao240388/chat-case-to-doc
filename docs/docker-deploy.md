@@ -27,24 +27,31 @@ services:
       - chat-case-data:/app/output
     environment:
       - TZ=Asia/Shanghai
-    entrypoint: ["/bin/bash", "-c"]
-    command:
-      - |
-        set -e
-        echo "=== 安装系统依赖 ==="
-        apt-get update -qq
-        apt-get install -y -qq --no-install-recommends libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev libcairo2 fonts-noto-cjk curl git > /dev/null
-        echo "=== 下载项目代码 ==="
-        cd /app
-        git clone --depth 1 https://github.com/youxiao240388/chat-case-to-doc.git /tmp/chat-case-to-doc
-        cp -r /tmp/chat-case-to-doc/app/* ./app/
-        rm -rf /tmp/chat-case-to-doc
-        echo "=== 安装 Python 依赖 ==="
-        pip install -q flask gunicorn rapidocr-onnxruntime pymupdf python-docx weasyprint openai python-dotenv werkzeug
-        echo "=== 创建目录 ==="
-        mkdir -p /app/output/uploads /app/output/results
-        echo "=== 启动服务 ==="
-        exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 300 app.main:app
+    command: |
+      bash -c '
+      set -e
+      echo "=== 初始化目录 ==="
+      mkdir -p /app
+      cd /app
+
+      echo "=== 安装系统依赖 ==="
+      apt-get update -qq
+      apt-get install -y -qq --no-install-recommends         libpango-1.0-0         libpangocairo-1.0-0         libgdk-pixbuf2.0-0         libffi-dev         libcairo2         fonts-noto-cjk         curl         git > /dev/null
+
+      echo "=== 下载项目代码 ==="
+      git clone --depth 1 https://github.com/youxiao240388/chat-case-to-doc.git /tmp/chat-case-to-doc
+      cp -r /tmp/chat-case-to-doc/app/* ./app/
+      rm -rf /tmp/chat-case-to-doc
+
+      echo "=== 安装 Python 依赖 ==="
+      pip install --no-cache-dir -q         flask         gunicorn         rapidocr-onnxruntime         pymupdf         python-docx         weasyprint         openai         python-dotenv         werkzeug
+
+      echo "=== 创建运行目录 ==="
+      mkdir -p /app/output/uploads /app/output/results
+
+      echo "=== 启动服务 ==="
+      exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 300 app.main:app
+      '
     restart: unless-stopped
 
 volumes:
@@ -202,9 +209,11 @@ A:
 
 A: 镜像已内置 `fonts-noto-cjk` 字体，一般不会出现此问题。
 
-### Q: 容器反复重启 (exit code 127)？
+### Q: 容器反复重启？
 
-A: 确保使用本教程提供的 YAML，不要手动拆分命令行。
+A: 查看日志 `docker logs chat-case-to-doc`，常见原因：
+- 网络问题导致 git clone 失败
+- pip 安装超时
 
 ---
 
