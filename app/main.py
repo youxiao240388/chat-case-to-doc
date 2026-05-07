@@ -44,12 +44,16 @@ def _get_input_type(filename: str) -> str:
     return "unknown"
 
 
-def _process_files(file_paths: list[str], input_type: str) -> str:
-    """Process uploaded files and return raw text."""
+def _process_files(file_paths: list[str], input_type: str, ocr_mode: str = "offline") -> str:
+    """Process uploaded files and return raw text.
+    
+    Args:
+        ocr_mode: "offline" for RapidOCR, "online" for Vision LLM
+    """
     if input_type == "image":
         # Sort by modification time to preserve order
         file_paths.sort(key=lambda p: os.path.getmtime(p))
-        return ocr_images(file_paths)
+        return ocr_images(file_paths, mode=ocr_mode)
     
     elif input_type == "pdf":
         pdf_path = file_paths[0]
@@ -112,10 +116,13 @@ def upload():
         if _get_input_type(p) != input_type:
             return render_template("index.html", error="请不要混合不同类型的文件（图片/PDF/文本）")
     
+    # Get OCR mode (only relevant for images)
+    ocr_mode = request.form.get("ocr_mode", "offline")
+    
     try:
         # Step 1: Extract raw text
-        logger.info(f"[{job_id}] Processing {len(saved_paths)} {input_type} file(s)...")
-        raw_text = _process_files(saved_paths, input_type)
+        logger.info(f"[{job_id}] Processing {len(saved_paths)} {input_type} file(s), OCR mode: {ocr_mode}...")
+        raw_text = _process_files(saved_paths, input_type, ocr_mode=ocr_mode)
         
         if not raw_text.strip():
             return render_template("index.html", error="未能从文件中提取到任何文本内容")
