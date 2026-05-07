@@ -17,6 +17,7 @@
 ### 3. Docker Compose 配置
 
 ```yaml
+version: '3.8'
 services:
   chat-case-to-doc:
     image: python:3.11-slim
@@ -27,8 +28,8 @@ services:
       - chat-case-data:/app/output
     environment:
       - TZ=Asia/Shanghai
+      - DEBIAN_FRONTEND=noninteractive
     command: |
-      bash -c '
       set -e
       echo "=== 初始化目录 ==="
       mkdir -p /app
@@ -36,7 +37,7 @@ services:
 
       echo "=== 安装系统依赖 ==="
       apt-get update -qq
-      apt-get install -y -qq --no-install-recommends         libpango-1.0-0         libpangocairo-1.0-0         libgdk-pixbuf2.0-0         libffi-dev         libcairo2         fonts-noto-cjk         curl         git > /dev/null
+      apt-get install -y -qq --no-install-recommends         libpango-1.0-0         libpangocairo-1.0-0         libgdk-pixbuf-2.0-0         libffi-dev         libcairo2         fonts-noto-cjk         curl         git
 
       echo "=== 下载项目代码 ==="
       git clone --depth 1 https://github.com/youxiao240388/chat-case-to-doc.git /tmp/chat-case-to-doc
@@ -51,7 +52,6 @@ services:
 
       echo "=== 启动服务 ==="
       exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 300 app.main:app
-      '
     restart: unless-stopped
 
 volumes:
@@ -124,6 +124,7 @@ docker build -t chat-case-to-doc .
 
 # 使用本地镜像的 docker-compose.yml
 cat > docker-compose.yml << 'EOF'
+version: '3.8'
 services:
   chat-case-to-doc:
     image: chat-case-to-doc:latest
