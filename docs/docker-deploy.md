@@ -84,7 +84,25 @@ docker compose logs -f
 
 ---
 
-## 三、配置说明
+## 三、本地构建部署
+
+如果需要自定义镜像：
+
+```bash
+# 克隆项目
+git clone https://github.com/youxiao240388/chat-case-to-doc.git
+cd chat-case-to-doc
+
+# 构建镜像
+docker build -t chat-case-to-doc .
+
+# 启动
+docker compose up -d
+```
+
+---
+
+## 四、配置说明
 
 ### 端口修改
 
@@ -97,8 +115,8 @@ ports:
 
 ### 数据持久化
 
-- 配置文件：Docker Volume `chat-case-data` 中的 `settings.json`
-- 生成文档：Docker Volume `chat-case-data` 中的 `results/` 目录
+- **配置文件**：Docker Volume `chat-case-data` 中的 `settings.json`
+- **生成文档**：Docker Volume `chat-case-data` 中的 `results/` 目录
 
 容器重建不会丢失数据。
 
@@ -110,15 +128,14 @@ ports:
 
 ---
 
-## 四、常见问题
+## 五、常见问题
 
 ### Q: 端口被占用？
 
-A: 修改 `docker-compose.yml` 中的端口映射，如 `"8080:5000"`。
+修改 `docker-compose.yml` 中的端口映射，如 `"8080:5000"`。
 
 ### Q: 如何更新？
 
-A: 拉取最新镜像后重建：
 ```bash
 docker compose pull
 docker compose up -d
@@ -127,32 +144,35 @@ docker compose up -d
 
 ### Q: 如何备份？
 
-A: 备份 Docker Volume：
 ```bash
 docker run --rm -v chat-case-data:/data -v $(pwd):/backup alpine tar czf /backup/chat-case-backup.tar.gz -C /data .
 ```
 
 ### Q: OCR 识别不准？
 
-A: 
 - 确保截图清晰（≥720p）
 - 图片按时间顺序排列
 - 尝试切换「视觉模型」模式
 
 ### Q: PDF 中文乱码？
 
-A: 镜像已内置 `fonts-noto-cjk` 字体，一般不会出现此问题。
+镜像已内置 `fonts-noto-cjk` 字体，一般不会出现此问题。
 
 ### Q: 容器启动失败？
 
-A: 常见原因：
+常见原因：
 - 网络问题导致镜像拉取失败（可尝试配置镜像源）
 - 端口被占用（修改端口映射）
 - 群晖内存不足（关闭其他容器释放内存）
 
+查看日志排查：
+```bash
+docker logs chat-case-to-doc
+```
+
 ---
 
-## 五、支持的 API
+## 六、支持的 API
 
 | 服务商 | API 地址 | 模型示例 |
 |--------|----------|----------|
