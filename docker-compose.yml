@@ -8,25 +8,24 @@ services:
       - chat-case-data:/app/output
     environment:
       - TZ=Asia/Shanghai
-    command: >
-      bash -c "
-      echo '=== 安装系统依赖 ===' &&
-      apt-get update -qq &&
-      apt-get install -y -qq --no-install-recommends 
-        libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 
-        libffi-dev libcairo2 fonts-noto-cjk curl git > /dev/null &&
-      echo '=== 下载项目代码 ===' &&
-      cd /app &&
-      git clone --depth 1 https://github.com/youxiao240388/chat-case-to-doc.git /tmp/chat-case-to-doc &&
-      cp -r /tmp/chat-case-to-doc/app/* ./app/ &&
-      rm -rf /tmp/chat-case-to-doc &&
-      echo '=== 安装 Python 依赖 ===' &&
-      pip install -q flask gunicorn rapidocr-onnxruntime pymupdf python-docx weasyprint openai python-dotenv werkzeug &&
-      echo '=== 创建目录 ===' &&
-      mkdir -p /app/output/uploads /app/output/results &&
-      echo '=== 启动服务 ===' &&
-      exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 300 app.main:app
-      "
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        echo "=== 安装系统依赖 ==="
+        apt-get update -qq
+        apt-get install -y -qq --no-install-recommends libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev libcairo2 fonts-noto-cjk curl git > /dev/null
+        echo "=== 下载项目代码 ==="
+        cd /app
+        git clone --depth 1 https://github.com/youxiao240388/chat-case-to-doc.git /tmp/chat-case-to-doc
+        cp -r /tmp/chat-case-to-doc/app/* ./app/
+        rm -rf /tmp/chat-case-to-doc
+        echo "=== 安装 Python 依赖 ==="
+        pip install -q flask gunicorn rapidocr-onnxruntime pymupdf python-docx weasyprint openai python-dotenv werkzeug
+        echo "=== 创建目录 ==="
+        mkdir -p /app/output/uploads /app/output/results
+        echo "=== 启动服务 ==="
+        exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 300 app.main:app
     restart: unless-stopped
 
 volumes:
