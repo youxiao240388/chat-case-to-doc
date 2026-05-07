@@ -9,8 +9,9 @@
   - 📴 **离线模式**：RapidOCR 本地识别，无需网络，速度快
   - 🤖 **视觉模型**：AI 模型识别，准确率更高，支持复杂排版
 - **PDF 自动判断**：文本型 PDF 直接提取，扫描型 PDF 自动切换 OCR
-- **AI 框例提取**：接入 DeepSeek 等 LLM，自动提取故障描述、排查步骤、根因、方案
+- **AI 案例提取**：接入 DeepSeek 等 LLM，自动提取故障描述、排查步骤、根因、方案
 - **双格式导出**：一键下载 Word (.docx) 和 PDF 文档
+- **Web 配置**：模型配置在 Web 界面完成，无需修改配置文件
 - **深色主题 UI**：拖拽上传，实时预览，一键下载
 - **Docker 一键部署**：`docker compose up -d` 即可运行
 
@@ -19,58 +20,45 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-username/chat-case-to-doc.git
+git clone https://github.com/youxiao240388/chat-case-to-doc.git
 cd chat-case-to-doc
 ```
 
-### 2. 配置 LLM API
-
-```bash
-cp .env.example .env
-# 编辑 .env，填入你的 API Key
-```
-
-支持任何兼容 OpenAI 格式的 API（DeepSeek、OpenAI、通义千问等）：
-
-```env
-LLM_API_KEY=sk-your-api-key
-LLM_API_BASE=https://api.deepseek.com
-LLM_MODEL=deepseek-chat
-
-# 可选：视觉模型（用于在线OCR模式）
-# 如果不配置，将复用 LLM 配置
-VISION_API_KEY=sk-your-vision-api-key
-VISION_API_BASE=https://api.deepseek.com
-VISION_MODEL=deepseek-chat
-```
-
-### 3. Docker 部署
+### 2. Docker 部署
 
 ```bash
 docker compose up -d
 ```
 
-访问 `http://localhost:5000` 即可使用。
+### 3. 配置模型
 
-### 4. 本地开发（不用 Docker）
+首次访问 `http://localhost:2657` 会自动跳转到设置页面。
 
-```bash
-pip install -r requirements.txt
-export LLM_API_KEY=sk-your-api-key
-export LLM_API_BASE=https://api.deepseek.com
-python -m app.main
-```
+填入你的 API 配置（支持 DeepSeek / OpenAI / 通义千问等兼容 OpenAI 格式的 API）：
+
+- **API 密钥**：你的 API Key
+- **API 地址**：如 `https://api.deepseek.com`
+- **模型名称**：如 `deepseek-chat`
+
+视觉模型配置可选，留空则复用主模型配置。
+
+### 4. 开始使用
+
+配置完成后，回到首页即可上传文件生成案例文档。
 
 ## 📖 使用方法
 
-1. 打开 Web 界面
-2. 上传文件（支持多选、拖拽）：
+1. 打开 Web 界面 `http://localhost:2657`
+2. 点击右上角 ⚙️ 可随时修改模型配置
+3. 上传文件（支持多选、拖拽）：
    - **截图**：群聊排障对话截图，按发送顺序排列
    - **PDF**：已有的排障文档或聊天记录导出
    - **文本**：复制粘贴的聊天记录
-3. 点击「开始识别」
-4. 等待处理（OCR → AI 分析 → 文档生成）
-5. 预览结果，下载 Word 或 PDF
+4. 选择 OCR 模式（仅截图时显示）：
+   - **离线模式**：RapidOCR 本地识别
+   - **视觉模型**：AI 模型识别
+5. 点击「开始识别」
+6. 预览结果，下载 Word 或 PDF
 
 ## 🏗️ 技术架构
 
@@ -103,52 +91,46 @@ python -m app.main
 chat-case-to-doc/
 ├── app/
 │   ├── main.py          # Flask 主应用
+│   ├── settings.py      # 配置管理
 │   ├── ocr.py           # OCR 处理（截图/扫描PDF）
 │   ├── pdf_parser.py    # PDF 文本提取
 │   ├── llm.py           # LLM 案例提取
 │   ├── docx_export.py   # Word 文档生成
 │   ├── pdf_export.py    # PDF 文档生成
 │   └── templates/
-│       └── index.html   # Web 界面
-├── requirements.txt
+│       ├── index.html   # 主界面
+│       └── settings.html # 设置界面
 ├── Dockerfile
 ├── docker-compose.yml
-├── .env.example
 └── README.md
 ```
 
 ## ⚙️ 配置说明
 
-### 环境变量
-
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `LLM_API_KEY` | - | LLM API 密钥（必填） |
-| `LLM_API_BASE` | `https://api.deepseek.com` | API 地址 |
-| `LLM_MODEL` | `deepseek-chat` | 模型名称 |
-| `VISION_API_KEY` | 复用 LLM 配置 | 视觉模型 API 密钥（可选） |
-| `VISION_API_BASE` | 复用 LLM 配置 | 视觉模型 API 地址（可选） |
-| `VISION_MODEL` | 复用 LLM 配置 | 视觉模型名称（可选） |
-
 ### 端口
 
-默认 `5000`，可在 `docker-compose.yml` 中修改：
+默认 `2657`，可在 `docker-compose.yml` 中修改：
 
 ```yaml
 ports:
   - "8080:5000"  # 改为 8080
 ```
 
+### 模型配置
+
+所有模型配置通过 Web 界面管理，持久化存储在 `output/settings.json`。
+
+支持的 API：
+- DeepSeek：`https://api.deepseek.com`
+- OpenAI：`https://api.openai.com`
+- 通义千问：`https://dashscope.aliyuncs.com/compatible-mode/v1`
+- 其他兼容 OpenAI 格式的 API
+
 ## 🔧 常见问题
 
 ### PDF 中文显示方块
 
-Docker 镜像已内置 `fonts-noto-cjk` 字体，一般不会出现此问题。如果仍有问题：
-
-```bash
-# 进入容器检查字体
-docker exec chat-case-to-doc fc-list :lang=zh
-```
+Docker 镜像已内置 `fonts-noto-cjk` 字体，一般不会出现此问题。
 
 ### OCR 识别不准
 
@@ -158,7 +140,7 @@ docker exec chat-case-to-doc fc-list :lang=zh
 
 ### LLM 返回格式异常
 
-DeepSeek 等模型偶尔会返回非 JSON 格式。系统已内置降级处理，会将原始文本作为描述输出。
+系统已内置降级处理，会将原始文本作为描述输出。
 
 ## 📄 License
 
