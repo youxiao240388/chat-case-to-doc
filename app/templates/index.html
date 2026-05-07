@@ -225,6 +225,64 @@
             word-break: break-all;
         }
         
+        /* OCR Mode Selection */
+        .ocr-mode-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: #1a1a2e;
+            border-radius: 12px;
+        }
+        .mode-label {
+            color: #888;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .mode-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .mode-option {
+            cursor: pointer;
+        }
+        .mode-option input[type="radio"] {
+            display: none;
+        }
+        .mode-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px 25px;
+            background: #16213e;
+            border: 2px solid #333;
+            border-radius: 10px;
+            transition: all 0.2s;
+            min-width: 160px;
+        }
+        .mode-option input[type="radio"]:checked + .mode-card {
+            border-color: #667eea;
+            background: #1a2a4e;
+        }
+        .mode-card:hover {
+            border-color: #555;
+        }
+        .mode-icon {
+            font-size: 2em;
+            margin-bottom: 6px;
+        }
+        .mode-name {
+            color: #ddd;
+            font-weight: 600;
+            font-size: 1em;
+        }
+        .mode-desc {
+            color: #888;
+            font-size: 0.8em;
+            margin-top: 4px;
+            text-align: center;
+        }
+        
         /* Feature Icons */
         .features {
             display: flex;
@@ -262,6 +320,29 @@
             <div class="upload-text">点击或拖拽文件到此处</div>
             <div class="upload-hint">支持格式：JPG/PNG/WebP（截图）、PDF、TXT/MD/LOG（文本）<br>可多选，图片自动按接收顺序排列</div>
             <div class="file-list" id="fileList"></div>
+        </div>
+        
+        <!-- OCR Mode Selection -->
+        <div class="ocr-mode-section" id="ocrModeSection" style="display:none;">
+            <div class="mode-label">OCR 识别模式</div>
+            <div class="mode-options">
+                <label class="mode-option">
+                    <input type="radio" name="ocr_mode" value="offline" checked>
+                    <span class="mode-card">
+                        <span class="mode-icon">📴</span>
+                        <span class="mode-name">离线模式</span>
+                        <span class="mode-desc">RapidOCR 本地识别，无需网络</span>
+                    </span>
+                </label>
+                <label class="mode-option">
+                    <input type="radio" name="ocr_mode" value="online">
+                    <span class="mode-card">
+                        <span class="mode-icon">🤖</span>
+                        <span class="mode-name">视觉模型</span>
+                        <span class="mode-desc">AI 模型识别，准确率更高</span>
+                    </span>
+                </label>
+            </div>
         </div>
         
         <button type="submit" class="submit-btn" id="submitBtn" disabled>
@@ -339,20 +420,33 @@ const submitBtn = document.getElementById('submitBtn');
 const dropZone = document.getElementById('dropZone');
 const uploadForm = document.getElementById('uploadForm');
 const loading = document.getElementById('loading');
+const ocrModeSection = document.getElementById('ocrModeSection');
+
+const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'];
+
+function isImageFile(filename) {
+    const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+    return IMAGE_EXTS.includes(ext);
+}
 
 fileInput.addEventListener('change', () => {
     fileList.innerHTML = '';
     const files = fileInput.files;
     if (files.length > 0) {
         submitBtn.disabled = false;
+        let hasImages = false;
         for (const f of files) {
             const tag = document.createElement('span');
             tag.className = 'file-tag';
             tag.textContent = f.name;
             fileList.appendChild(tag);
+            if (isImageFile(f.name)) hasImages = true;
         }
+        // Show OCR mode selection only for image files
+        ocrModeSection.style.display = hasImages ? 'block' : 'none';
     } else {
         submitBtn.disabled = true;
+        ocrModeSection.style.display = 'none';
     }
 });
 
