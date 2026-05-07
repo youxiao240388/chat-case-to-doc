@@ -1,0 +1,9 @@
+flask==3.1.1
+gunicorn==23.0.0
+rapidocr-onnxruntime==1.4.4
+pymupdf==1.25.5
+python-docx==1.1.2
+weasyprint==63.1
+openai==1.82.0
+python-dotenv==1.1.0
+werkzeug==3.1.3
