@@ -16,7 +16,7 @@ RUN apt-get update -qq && \
       libgdk-pixbuf-2.0-0 \
       libffi-dev \
       libcairo2 \
-      libgl1-mesa-glx \
+      libgl1 \
       fonts-noto-cjk \
       curl \
       git && \
