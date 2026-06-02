@@ -16,6 +16,7 @@ RUN apt-get update -qq && \
       libgdk-pixbuf-2.0-0 \
       libffi-dev \
       libcairo2 \
+      libgl1-mesa-glx \
       fonts-noto-cjk \
       curl \
       git && \
@@ -25,7 +26,7 @@ RUN apt-get update -qq && \
 WORKDIR /app
 
 # 安装 Python 依赖
-COPY requirements.txt .
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 复制应用代码
@@ -36,7 +37,7 @@ RUN mkdir -p /app/output/uploads /app/output/results
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=5s \
-  CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:5000/health || exit 1
 
 EXPOSE 5000
 
